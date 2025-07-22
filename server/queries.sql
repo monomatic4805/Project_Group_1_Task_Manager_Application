@@ -6,7 +6,11 @@ CREATE TABLE users (
 CREATE TABLE tasks (
     task_id SERIAL PRIMARY KEY,
     creator_username VARCHAR(255),
+    assigned_to VARCHAR(255),
     title VARCHAR(255),
-    content TEXT,
-    FOREIGN KEY (creator_username) REFERENCES users(username)
+    description TEXT,
+    priority VARCHAR(255),
+    status VARCHAR(355),
+    FOREIGN KEY (creator_username) REFERENCES users(username),
+    FOREIGN KEY (assigned_to) REFERENCES users(username)
 );
