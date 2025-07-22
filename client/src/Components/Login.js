@@ -38,7 +38,7 @@ function Login({ onLoginSuccess }) {
         </div>
 
         <div className="auth-input-group">
-          <label>password</label>
+          <label>Password</label>
           <input
             type="password"
             placeholder="enter your password"
@@ -49,12 +49,12 @@ function Login({ onLoginSuccess }) {
         </div>
 
         {/* submit button */}
-        <button type="submit" className="auth-btn">log in</button>
+        <button type="submit" className="auth-btn">Log In</button>
       </form>
 
       {/* link to signup page */}
       <div className="auth-footer">
-        don’t have an account? <Link to="/signup">sign up</Link>
+        Don't have an account? <Link to="/signup">Sign Up</Link>
       </div>
     </div>
   );
