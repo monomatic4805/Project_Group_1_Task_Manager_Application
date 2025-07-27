@@ -1,6 +1,16 @@
+import pg from "pg";
 const express = require('express');
 const cors = require('cors');
 const app = express();
+
+const db = new pg.Client({
+    user: "postgres",
+    host: "localhost",
+    database: "blogapp",
+    password: "PASSWORD", // insert password here
+    port: 5432
+});
+db.connect();
 
 app.use(cors());
 app.use(express.json());
