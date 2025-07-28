@@ -21,6 +21,7 @@ function AppWrapper() {
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Show navbar except on auth-related pages
   const showNavbar = !['/login', '/signup', '/logout'].includes(location.pathname);
 
   const handleLogout = () => {
@@ -64,12 +65,10 @@ function AppWrapper() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <Router>
       <AppWrapper />
     </Router>
   );
 }
-
-export default App;

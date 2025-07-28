@@ -5,6 +5,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Mock task data
 let tasks = [
   {
     id: 1,
@@ -16,6 +17,15 @@ let tasks = [
     created_by_id: 1,
   },
 ];
+
+// ✅ Updated mock user data with `username`
+let users = [
+  { id: 1, username: "Rizelle Nolasco" },
+  { id: 2, username: "Bob Smith" },
+  { id: 3, username: "Charlie Davis" },
+];
+
+// ========== TASK ROUTES ========== //
 
 // Get all tasks
 app.get('/api/tasks', (req, res) => {
@@ -40,7 +50,7 @@ app.post('/api/tasks', (req, res) => {
   res.status(201).json(newTask);
 });
 
-// Update task
+// Update a task by ID
 app.put('/api/tasks/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const index = tasks.findIndex(t => t.id === id);
@@ -60,5 +70,14 @@ app.delete('/api/tasks/:id', (req, res) => {
   res.status(204).send();
 });
 
+// ========== USER ROUTES ========== //
+
+// Get all users
+app.get('/api/users', (req, res) => {
+  res.json(users);
+});
+
+// ========== SERVER START ========== //
+
 const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

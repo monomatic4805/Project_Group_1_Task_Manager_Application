@@ -1,42 +1,67 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 function MyTasks() {
   const [tasks, setTasks] = useState([]);
-  const [users, setUsers] = useState([]);  // <-- Add state for users
+  const [users, setUsers] = useState([]);
   const [filterPriority, setFilterPriority] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [error, setError] = useState(null);
 
-  const loggedInUserId = 1;
+  const loggedInUserId = 1; // Replace with actual logged-in user ID
 
   useEffect(() => {
-    // Fetch tasks
+    // Fetch tasks assigned to or created by logged-in user
     axios.get('http://localhost:5000/api/tasks')
       .then(res => {
-        const myTasks = res.data.filter(
-          task => task.created_by_id === loggedInUserId || task.assigned_to_id === loggedInUserId
+        console.log("Loaded tasks:", res.data);
+        const myTasks = res.data.filter(task =>
+          task.created_by_id === loggedInUserId || task.assigned_to_id === loggedInUserId
         );
         setTasks(myTasks);
+        setLoadingTasks(false);
       })
-      .catch(() => alert('Failed to load tasks'));
+      .catch(err => {
+        setError('Failed to load tasks');
+        setLoadingTasks(false);
+      });
 
     // Fetch users
     axios.get('http://localhost:5000/api/users')
-      .then(res => setUsers(res.data))
-      .catch(() => alert('Failed to load users'));
+      .then(res => {
+        console.log("Loaded users:", res.data);
+        setUsers(res.data);
+        setLoadingUsers(false);
+      })
+      .catch(err => {
+        setError('Failed to load users');
+        setLoadingUsers(false);
+      });
   }, []);
 
-  const filtered = tasks.filter(task =>
-    (filterPriority ? task.priority === filterPriority : true) &&
-    (filterStatus ? task.status === filterStatus : true)
-  );
+  // Get user name by ID (returns 'Unknown' if not found)
+  const getUserName = (id) => {
+    const user = users.find(u => u.id === id);
+    return user ? user.name : 'Unknown';
+  };
 
-  const sortedTasks = React.useMemo(() => {
-    if (!sortConfig.key) return filtered;
+  // Filter tasks by priority and status
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task =>
+      (!filterPriority || task.priority === filterPriority) &&
+      (!filterStatus || task.status === filterStatus)
+    );
+  }, [tasks, filterPriority, filterStatus]);
 
-    const sorted = [...filtered].sort((a, b) => {
+  // Sort filtered tasks based on sortConfig
+  const sortedTasks = useMemo(() => {
+    if (!sortConfig.key) return filteredTasks;
+
+    return [...filteredTasks].sort((a, b) => {
       let aVal = a[sortConfig.key];
       let bVal = b[sortConfig.key];
 
@@ -44,19 +69,18 @@ function MyTasks() {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
       } else {
-        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+        aVal = typeof aVal === 'string' ? aVal.toLowerCase() : aVal;
+        bVal = typeof bVal === 'string' ? bVal.toLowerCase() : bVal;
       }
 
       if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
+  }, [filteredTasks, sortConfig]);
 
-    return sorted;
-  }, [filtered, sortConfig]);
-
-  const requestSort = key => {
+  // Toggle sorting on column click
+  const requestSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -64,98 +88,96 @@ function MyTasks() {
     setSortConfig({ key, direction });
   };
 
-  const getSortIcon = key => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? '▲' : '▼';
-  };
-
-  // Helper to get user name by id
-  const getUserName = (userId) => {
-    const user = users.find(u => u.id === userId);
-    return user ? user.name : 'Unknown';
-  };
-
-  // 🎨 Styles (unchanged)...
-  const containerStyle = {
-    fontFamily: "'Segoe UI', sans-serif",
-    maxWidth: '900px',
-    margin: '2rem auto',
-    padding: '1.5rem',
-    borderRadius: '12px',
-    backgroundColor: '#191D32',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-    color: '#F1F1F1',
-  };
-
-  const headerStyle = {
-    backgroundColor: '#282F44',
-    color: '#F1F1F1',
-    cursor: 'pointer',
-    userSelect: 'none',
-  };
-
-  const thTdStyle = {
-    border: '1px solid #453A49',
-    padding: '14px 18px',
-    textAlign: 'left',
-    fontSize: '1rem',
-    color: '#F1F1F1',
-  };
-
-  const filterLabelStyle = {
-    marginRight: '1.5rem',
-    fontWeight: '600',
-    color: '#F1F1F1',
-  };
-
-  const selectStyle = {
-    marginLeft: '0.5rem',
-    padding: '6px 10px',
-    borderRadius: '6px',
-    border: '1px solid #453A49',
-    fontSize: '1rem',
-    backgroundColor: '#282F44',
-    color: '#F1F1F1',
-  };
-
-  const editLinkStyle = {
-    color: '#6D3B47',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-  };
-
-  const deleteButtonStyle = {
-    backgroundColor: '#6D3B47',
-    color: '#F1F1F1',
-    border: 'none',
-    padding: '6px 12px',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    transition: 'background-color 0.3s',
-  };
-
-  const handleDelete = (task) => {
-    if (window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
-      axios.delete(`http://localhost:5000/api/tasks/${task.id}`)
-        .then(() => {
-          setTasks(prevTasks => prevTasks.filter(t => t.id !== task.id));
-        })
+  // Delete task with confirmation
+  const deleteTask = (id) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+      axios.delete(`http://localhost:5000/api/tasks/${id}`)
+        .then(() => setTasks(prev => prev.filter(task => task.id !== id)))
         .catch(() => alert('Failed to delete task'));
     }
   };
 
-  return (
-    <div style={containerStyle}>
-      <h2 style={{ textAlign: 'center', color: '#F1F1F1', marginBottom: '1rem' }}>My Tasks</h2>
+  // Styles
+  const styles = {
+    container: {
+      fontFamily: 'Segoe UI, sans-serif',
+      maxWidth: '950px',
+      margin: '2rem auto',
+      padding: '2rem',
+      borderRadius: '10px',
+      backgroundColor: '#191D32',
+      color: '#F1F1F1',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+    },
+    filters: {
+      display: 'flex',
+      gap: '2rem',
+      marginBottom: '1.5rem',
+    },
+    select: {
+      padding: '8px 12px',
+      borderRadius: '6px',
+      backgroundColor: '#282F44',
+      color: '#F1F1F1',
+      border: '1px solid #453A49',
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+    },
+    th: {
+      padding: '12px',
+      borderBottom: '1px solid #444',
+      cursor: 'pointer',
+      backgroundColor: '#282F44',
+      textAlign: 'left',
+      userSelect: 'none',
+    },
+    td: {
+      padding: '12px',
+      borderBottom: '1px solid #333',
+    },
+    button: {
+      backgroundColor: '#6D3B47',
+      border: 'none',
+      padding: '6px 12px',
+      borderRadius: '6px',
+      color: '#F1F1F1',
+      cursor: 'pointer',
+      fontWeight: '600',
+    },
+    link: {
+      color: '#6D3B47',
+      textDecoration: 'none',
+      fontWeight: 'bold',
+    },
+    loading: {
+      textAlign: 'center',
+      fontSize: '1.2rem',
+      padding: '2rem',
+      color: '#bbb',
+    }
+  };
 
-      <div>
-        <label style={filterLabelStyle}>
+  if (loadingTasks || loadingUsers) {
+    return <div style={styles.loading}>Loading...</div>;
+  }
+
+  if (error) {
+    return <div style={styles.loading}>{error}</div>;
+  }
+
+  return (
+    <div style={styles.container}>
+      <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>My Tasks</h2>
+
+      <div style={styles.filters}>
+        <label>
           Priority:
           <select
             value={filterPriority}
             onChange={e => setFilterPriority(e.target.value)}
-            style={selectStyle}
+            style={styles.select}
           >
             <option value="">All</option>
             <option>High</option>
@@ -164,12 +186,12 @@ function MyTasks() {
           </select>
         </label>
 
-        <label style={filterLabelStyle}>
+        <label>
           Status:
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
-            style={selectStyle}
+            style={styles.select}
           >
             <option value="">All</option>
             <option>Open</option>
@@ -179,49 +201,50 @@ function MyTasks() {
         </label>
       </div>
 
-      <table style={{ ...containerStyle, backgroundColor: 'transparent', boxShadow: 'none', marginTop: '1rem' }}>
-        <thead style={headerStyle}>
+      <table style={styles.table}>
+        <thead>
           <tr>
-            <th style={thTdStyle} onClick={() => requestSort('title')}>Title {getSortIcon('title')}</th>
-            <th style={thTdStyle}>Description</th>
-            <th style={thTdStyle} onClick={() => requestSort('priority')}>Priority {getSortIcon('priority')}</th>
-            <th style={thTdStyle} onClick={() => requestSort('due_date')}>Due Date {getSortIcon('due_date')}</th>
-            <th style={thTdStyle} onClick={() => requestSort('status')}>Status {getSortIcon('status')}</th>
-            <th style={thTdStyle}>Assigned To</th> {/* Added Assigned To column */}
-            <th style={thTdStyle}>Edit</th>
-            <th style={thTdStyle}>Delete</th>
+            <th style={styles.th} onClick={() => requestSort('title')}>
+              Title {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th style={styles.th}>Description</th>
+            <th style={styles.th} onClick={() => requestSort('priority')}>
+              Priority {sortConfig.key === 'priority' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th style={styles.th} onClick={() => requestSort('due_date')}>
+              Due Date {sortConfig.key === 'due_date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th style={styles.th} onClick={() => requestSort('status')}>
+              Status {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+            </th>
+            <th style={styles.th}>Assigned To</th>
+            <th style={styles.th}>Edit</th>
+            <th style={styles.th}>Delete</th>
           </tr>
         </thead>
         <tbody>
-          {sortedTasks.length ? (
+          {sortedTasks.length > 0 ? (
             sortedTasks.map(task => (
               <tr key={task.id}>
-                <td style={thTdStyle}>{task.title}</td>
-                <td style={thTdStyle}>{task.description || '-'}</td>
-                <td style={thTdStyle}>{task.priority}</td>
-                <td style={thTdStyle}>{task.due_date}</td>
-                <td style={thTdStyle}>{task.status}</td>
-                <td style={thTdStyle}>{getUserName(task.assigned_to_id)}</td> {/* Show user name */}
-                <td style={thTdStyle}>
-                  <Link to={`/tasks/edit/${task.id}`} style={editLinkStyle}>
-                    Edit
-                  </Link>
+                <td style={styles.td}>{task.title}</td>
+                <td style={styles.td}>{task.description || '-'}</td>
+                <td style={styles.td}>{task.priority}</td>
+                <td style={styles.td}>{task.due_date}</td>
+                <td style={styles.td}>{task.status}</td>
+                <td style={styles.td}>
+                  {task.assigned_to_id ? getUserName(task.assigned_to_id) : 'Unassigned'}
                 </td>
-                <td style={thTdStyle}>
-                  <button
-                    style={deleteButtonStyle}
-                    onMouseOver={e => (e.target.style.backgroundColor = '#8E4C5C')}
-                    onMouseOut={e => (e.target.style.backgroundColor = '#6D3B47')}
-                    onClick={() => handleDelete(task)}
-                  >
-                    Delete
-                  </button>
+                <td style={styles.td}>
+                  <Link to={`/tasks/edit/${task.id}`} style={styles.link}>Edit</Link>
+                </td>
+                <td style={styles.td}>
+                  <button onClick={() => deleteTask(task.id)} style={styles.button}>Delete</button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td style={{ ...thTdStyle, textAlign: 'center' }} colSpan="8">
+              <td colSpan="8" style={{ ...styles.td, textAlign: 'center' }}>
                 No tasks found.
               </td>
             </tr>

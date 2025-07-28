@@ -6,11 +6,17 @@ function EditTask() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [task, setTask] = useState(null);
+  const [users, setUsers] = useState([]);
 
+  // Fetch task data and users
   useEffect(() => {
     axios.get(`http://localhost:5000/api/tasks/${id}`)
       .then(res => setTask(res.data))
       .catch(() => alert('Failed to load task data'));
+
+    axios.get('http://localhost:5000/api/users')
+      .then(res => setUsers(res.data))
+      .catch(() => alert('Failed to load users'));
   }, [id]);
 
   const handleChange = e => {
@@ -27,6 +33,7 @@ function EditTask() {
 
   if (!task) return <p style={{ textAlign: 'center', color: '#F1F1F1' }}>Loading...</p>;
 
+  // 💅 Styles
   const containerStyle = {
     maxWidth: '520px',
     margin: '2rem auto',
@@ -85,18 +92,16 @@ function EditTask() {
           name="title"
           value={task.title}
           onChange={handleChange}
-          placeholder="Title"
           required
           style={inputStyle}
         />
 
-        <label style={labelStyle} htmlFor="description">Description (optional):</label>
+        <label style={labelStyle} htmlFor="description">Description:</label>
         <textarea
           id="description"
           name="description"
           value={task.description || ''}
           onChange={handleChange}
-          placeholder="Add a description"
           style={textareaStyle}
         />
 
@@ -137,6 +142,21 @@ function EditTask() {
           <option>Open</option>
           <option>In Progress</option>
           <option>Completed</option>
+        </select>
+
+        <label style={labelStyle} htmlFor="assigned_to_id">Assigned To:</label>
+        <select
+          id="assigned_to_id"
+          name="assigned_to_id"
+          value={task.assigned_to_id || ''}
+          onChange={handleChange}
+          required
+          style={inputStyle}
+        >
+          <option value="">-- Select User --</option>
+          {users.map(user => (
+            <option key={user.id} value={user.id}>{user.username}</option>
+          ))}
         </select>
 
         <button type="submit" style={buttonStyle}>Save</button>
