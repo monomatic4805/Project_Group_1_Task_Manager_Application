@@ -93,18 +93,37 @@ function TaskList({ tasks, users, onDelete }) {
       </div>
 
       <table style={styles.table}>
-        <thead>
-          <tr>
-            <th style={styles.th} onClick={() => requestSort('title')}>Title</th>
-            <th style={styles.th}>Description</th>
-            <th style={styles.th} onClick={() => requestSort('priority')}>Priority</th>
-            <th style={styles.th} onClick={() => requestSort('due_date')}>Due Date</th>
-            <th style={styles.th} onClick={() => requestSort('status')}>Status</th>
-            <th style={styles.th}>Assigned To</th>
-            <th style={styles.th}>Edit</th>
-            <th style={styles.th}>Delete</th>
-          </tr>
-        </thead>
+<thead>
+  <tr>
+    {[
+      { label: 'Title', key: 'title', sortable: true },
+      { label: 'Description' },
+      { label: 'Priority', key: 'priority', sortable: true },
+      { label: 'Due Date', key: 'due_date', sortable: true },
+      { label: 'Status', key: 'status', sortable: true },
+      { label: 'Assigned To' },
+      { label: 'Edit' },
+      { label: 'Delete' }
+    ].map(col => (
+      <th
+        key={col.label}
+        style={{
+          ...styles.th,
+          ...(col.sortable ? { color: '#f1f1f1' } : {})
+        }}
+        onClick={col.sortable ? () => requestSort(col.key) : null}
+        className={col.sortable ? 'sortable-column' : ''}
+      >
+        {col.label}
+        {col.sortable && sortConfig.key === col.key && (
+          <span className="sort-arrow">
+            {sortConfig.direction === 'asc' ? ' ▲' : ' ▼'}
+          </span>
+        )}
+      </th>
+    ))}
+  </tr>
+</thead>
         <tbody>
           {sortedTasks.length > 0 ? (
             sortedTasks.map(task => (
