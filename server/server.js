@@ -15,6 +15,7 @@ db.connect();
 app.use(cors());
 app.use(express.json());
 
+/*
 let tasks = [
   {
     id: 1,
@@ -26,6 +27,17 @@ let tasks = [
     created_by_id: 1,
   },
 ];
+*/
+
+let tasks = [];
+db.query("SELECT * FROM tasks", (err, res) => {
+    if (err) {
+        console.error("Error executing query on tasks", err.stack);
+    } else {
+        tasks = res.rows;
+    }
+    db.end();
+});
 
 // Get all tasks
 app.get('/api/tasks', (req, res) => {
@@ -43,11 +55,26 @@ app.get('/api/tasks/:id', (req, res) => {
 // Create new task
 app.post('/api/tasks', (req, res) => {
   const newTask = {
-    ...req.body,
-    id: tasks.length + 1,
+    ...req.body // ,
+    // id: tasks.length + 1,
   };
-  tasks.push(newTask);
-  res.status(201).json(newTask);
+  // tasks.push(newTask);
+
+  db.query("INSERT INTO tasks " +
+    "(creator_username, assigned_to, title, description, priority, status, due_date) " +
+    "VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    newTask.created_by_id, newTask.assign_to_id, newTask.title, newTask.description,
+    newTask.priority, newTask.status, newTask.due_date,
+    (err, res) => {
+    if (err) {
+        console.error("Error executing query on tasks", err.stack);
+    } else {
+        res.status(201).json(newTask);
+    }
+    db.end();
+});
+
+  // res.status(201).json(newTask);
 });
 
 // Update task

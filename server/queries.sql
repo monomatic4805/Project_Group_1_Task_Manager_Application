@@ -10,7 +10,8 @@ CREATE TABLE tasks (
     title VARCHAR(255),
     description TEXT,
     priority VARCHAR(255),
-    status VARCHAR(355),
+    due_date VARCHAR(15),
+    status VARCHAR(255),
     FOREIGN KEY (creator_username) REFERENCES users(username),
     FOREIGN KEY (assigned_to) REFERENCES users(username)
 );
